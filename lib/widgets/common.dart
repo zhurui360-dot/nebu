@@ -428,11 +428,9 @@ class ImportBanner extends StatelessWidget {
     var canDismiss = false;
 
     if (app.localScanning && job == null) {
-      icon = const SizedBox(
-        width: 15,
-        height: 15,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
+      // 用静态图标代替转圈动画：这条横幅常驻在毛玻璃上，
+      // 一个永不停歇的动画会让整块背板每帧重绘，扫描时整机发烫。
+      icon = Icon(Icons.sync_rounded, size: 16, color: p.brand);
       label = L.read(context).t('import.scanning');
       progress = app.localProgress > 0 ? app.localProgress : null;
     } else if (job!.failed) {
@@ -441,11 +439,9 @@ class ImportBanner extends StatelessWidget {
           size: 16, color: Color(0xFFC2412E));
       label = L.read(context).t('import.failed', {'e': job.error ?? ''});
     } else if (!job.isDone) {
-      icon = const SizedBox(
-        width: 15,
-        height: 15,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
+      // 用静态图标代替转圈动画：这条横幅常驻在毛玻璃上，
+      // 一个永不停歇的动画会让整块背板每帧重绘，扫描时整机发烫。
+      icon = Icon(Icons.sync_rounded, size: 16, color: p.brand);
       label = L.read(context).t('import.progress',
           {'a': '${job.done}', 'b': '${job.total}'}) +
           (job.total > 0

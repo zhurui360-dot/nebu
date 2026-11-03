@@ -226,6 +226,27 @@ class AppDatabase {
     return rows.map((e) => e['id'] as String).toSet();
   }
 
+  /// 本地已入库文件的指纹（路径 → 大小 + 修改时间）。
+  /// 重扫时文件没变就不用再读标签，几千首的曲库能省掉绝大部分 I/O。
+  Future<Map<String, ({int size, int mtime})>> localFileStats() async {
+    final db = await _database;
+    final rows = await db.query(
+      'tracks',
+      columns: ['path', 'size_bytes', 'created_at'],
+      where: "source_id = 'local'",
+    );
+    final out = <String, ({int size, int mtime})>{};
+    for (final r in rows) {
+      final path = r['path'] as String?;
+      if (path == null || path.isEmpty) continue;
+      out[path] = (
+        size: (r['size_bytes'] as int?) ?? 0,
+        mtime: (r['created_at'] as int?) ?? 0,
+      );
+    }
+    return out;
+  }
+
   // ======================= 我喜欢 =======================
 
   Future<Set<String>> favorites() async {

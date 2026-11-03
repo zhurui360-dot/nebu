@@ -174,7 +174,7 @@ class AppState extends ChangeNotifier {
   /// 限到约 10 次/秒：进度肉眼看不出差别，掉帧明显好转。
   void _notifyProgress({bool force = false}) {
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (!force && now - _lastProgressNotify < 90) return;
+    if (!force && now - _lastProgressNotify < 150) return;
     _lastProgressNotify = now;
     notifyListeners();
   }
@@ -391,6 +391,46 @@ class AppState extends ChangeNotifier {
       );
     }
     _albums = map;
+    _invalidateDerived();
+  }
+
+  // ---- 派生数据的缓存 ----
+  // 「最近添加」「专辑列表」「歌手数」原来每次 build 都现场排序/去重，
+  // 曲库几千首时每秒重建十几次，滚动直接掉帧。这里算一次缓存起来，
+  // 曲库变化时（_invalidateDerived）再重算。
+  List<Track>? _latestCache;
+  List<Album>? _albumCache;
+  int? _artistCountCache;
+
+  void _invalidateDerived() {
+    _latestCache = null;
+    _albumCache = null;
+    _artistCountCache = null;
+  }
+
+  /// 扫描时增量入曲库：只碰这几首，不整表重算（几千首时差别很大）
+  void _appendTracks(List<Track> batch) {
+    if (batch.isEmpty) return;
+    final list = _tracks;
+    list.addAll(batch);
+    _tracks = list;
+    for (final t in batch) {
+      _trackById[t.id] = t;
+      (_tracksByAlbum[t.albumId] ??= <Track>[]).add(t);
+      if (t.albumName.isNotEmpty) {
+        _albums.putIfAbsent(
+          t.albumId,
+          () => Album(
+            id: t.albumId,
+            name: t.albumName,
+            year: t.year ?? 0,
+            artist: t.artist,
+            coverStyle: coverStyleOf(t.albumId),
+          ),
+        );
+      }
+    }
+    _invalidateDerived();
   }
 
   Future<void> _loadSources() async {
@@ -424,7 +464,8 @@ class AppState extends ChangeNotifier {
   Album albumOf(String id) => _albums[id] ??
       Album(id: id, name: '未知专辑', year: 0, coverStyle: coverStyleOf(id));
 
-  List<Album> get albumList => _albums.values.toList()
+  /// 专辑列表（按年份倒序，缓存；曲库变化时失效）
+  List<Album> get albumList => _albumCache ??= _albums.values.toList()
     ..sort((a, b) => b.year.compareTo(a.year));
 
   /// 取某专辑的封面路径：专辑里任意一首有内嵌封面就用它
@@ -458,13 +499,13 @@ class AppState extends ChangeNotifier {
   /// 最近添加的 20 首（按入库时间倒序）
   static const homePreviewCount = 20;
 
-  List<Track> get latestTracks {
-    final list = List<Track>.of(tracks)
-      ..sort((a, b) => b.addedAt.compareTo(a.addedAt));
-    return list.take(homePreviewCount).toList();
-  }
+  List<Track> get latestTracks => _latestCache ??= (List<Track>.of(_tracks)
+        ..sort((a, b) => b.addedAt.compareTo(a.addedAt)))
+      .take(homePreviewCount)
+      .toList();
 
-  int get artistCount => tracks.map((t) => t.artist).toSet().length;
+  int get artistCount =>
+      _artistCountCache ??= _tracks.map((t) => t.artist).toSet().length;
 
   /// 歌单总数：4 个智能歌单（全部歌曲 / 我喜欢 / 最近播放 / 离线缓存）+ 自建歌单
   int get playlistCount => 4 + playlists.length;
@@ -1295,19 +1336,26 @@ class AppState extends ChangeNotifier {
         final batch = List.of(pending);
         pending.clear();
         await _db.upsertTracks(batch);
-        tracks = [...tracks, ...batch];
-        _rebuildAlbums();
+        _appendTracks(batch);
         notifyListeners();
       }
 
-      final res = await scanner.scan(roots: paths, onProgress: (done, total) {
-        final ratio = total == 0 ? 0.0 : done / total;
-        localProgress = (base + ratio.clamp(0.0, 1.0) * span).clamp(0.0, 1.0);
-        _notifyProgress();
-      }, onTrackScanned: (t) async {
-        pending.add(t);
-        if (pending.length >= 24) await flush();
-      });
+      // 重扫时先拿库里已有文件的指纹：没变过的文件不重复读标签
+      final known = await _db.localFileStats();
+
+      final res = await scanner.scan(
+          roots: paths,
+          known: known,
+          onProgress: (done, total) {
+            final ratio = total == 0 ? 0.0 : done / total;
+            localProgress =
+                (base + ratio.clamp(0.0, 1.0) * span).clamp(0.0, 1.0);
+            _notifyProgress();
+          },
+          onTrackScanned: (t) async {
+            pending.add(t);
+            if (pending.length >= 24) await flush();
+          });
       await flush();
 
       final existing = await _db.existingKeys('local');
@@ -1318,7 +1366,7 @@ class AppState extends ChangeNotifier {
       if (fresh > 0) await _db.bumpImportedDirs('local', 1);
       if (paths != null) {
         for (final path in paths) {
-          final n = res.tracks.where((t) => (t.path ?? '').startsWith(path)).length;
+          final n = tracks.where((t) => (t.path ?? '').startsWith(path)).length;
           await _db.upsertFolder(
             id: 'local::$path',
             sourceId: 'local',
@@ -1337,7 +1385,8 @@ class AppState extends ChangeNotifier {
         fillMissingMeta(silent: true);
       }
 
-      return '扫描完成：共 ${res.scanned} 个文件，入库 ${res.tracks.length} 首，新增 $fresh 首'
+      final skipped = res.unchanged > 0 ? '，跳过 ${res.unchanged} 首未变化' : '';
+      return '扫描完成：共 ${res.scanned} 个文件，入库 ${res.tracks.length} 首，新增 $fresh 首$skipped'
           '${res.withCover > 0 ? '，封面 ${res.withCover}' : ''}'
           '${res.withLyric > 0 ? '，歌词 ${res.withLyric}' : ''}';
     } catch (e) {
@@ -1651,8 +1700,7 @@ class AppState extends ChangeNotifier {
         pending.clear();
         await _db.upsertTracks(batch);
         // 直接追加进内存列表并重建专辑 → 界面立刻可见，不用整表重读
-        tracks = [...tracks, ...batch];
-        _rebuildAlbums();
+        _appendTracks(batch);
         notifyListeners();
       }
 

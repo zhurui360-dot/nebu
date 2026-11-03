@@ -15,6 +15,7 @@ import 'tags/track_guesser.dart';
 class LocalScanResult {
   LocalScanResult({
     required this.tracks,
+    required this.unchanged,
     required this.scanned,
     required this.withCover,
     required this.withLyric,
@@ -24,6 +25,9 @@ class LocalScanResult {
 
   /// 扫到的音频文件数（含与库里重复的）
   final int scanned;
+
+  /// 文件没变化、直接跳过标签解析的数量
+  final int unchanged;
   final int withCover;
   final int withLyric;
 }
@@ -78,6 +82,10 @@ class LocalScanner {
   Future<LocalScanResult> scan({
     /// 只扫这些目录（空 = 全盘：手机里的存储根目录）
     List<String>? roots,
+
+    /// 已入库文件的指纹（路径 → 大小 + 修改时间）。命中的文件直接跳过，
+    /// 重扫几千首的曲库时不用再读一遍标签。
+    Map<String, ({int size, int mtime})>? known,
     void Function(int done, int total)? onProgress,
     void Function(String status)? onStatus,
 
@@ -101,90 +109,132 @@ class LocalScanner {
     // 同目录封面只找一次；封面字节也按内容去重，一张专辑不会存 N 份
     final dirCoverCache = <String, Uint8List?>{};
 
-    final out = <Track>[];
+    final out = List<Track?>.filled(files.length, null);
     var withCover = 0, withLyric = 0;
+    var unchanged = 0;
+    var done = 0;
+    var cursor = 0;
 
-    for (var i = 0; i < files.length; i++) {
-      final file = files[i];
-      onProgress?.call(i + 1, files.length);
+    // 并发读文件：瓶颈是磁盘 I/O（打开+读文件头+读封面），
+    // 串行一行一行等太慢。4 路足够，再多会把低端机的 I/O 队列打满反而更慢。
+    final lanes = files.length < 8 ? 1 : 4;
 
-      final path = file.path;
-      final ext = path.contains('.') ? path.split('.').last : '';
-      final fmt = MusicFormatX.fromExtension(ext);
-      if (fmt == null) continue;
+    Future<void> lane() async {
+      while (true) {
+        final i = cursor;
+        if (i >= files.length) return;
+        cursor = i + 1;
 
-      TagData tag = TagData();
-      try {
-        tag = await _readTags(file);
-      } catch (_) {}
+        final file = files[i];
+        final path = file.path;
 
-      final id = Track.idOf('local', path);
-
-      // 内嵌封面拿不到时，看同目录有没有 cover.jpg / folder.png 之类
-      Uint8List? art = tag.artwork;
-      if (art == null || art.isEmpty) {
-        art = await _siblingCover(dirCoverCache, path);
-      }
-      String? coverPath;
-      if (art != null && art.isNotEmpty) {
-        coverPath = await _writeCover(covers, art);
-        if (coverPath != null) withCover++;
-      }
-
-      String? lyricPath;
-      final lrc = File(path.replaceAll(RegExp(r'\.\w+$'), '.lrc'));
-      if (await lrc.exists()) {
+        // 一次 stat 拿大小和修改时间（后面判重和入库都用它，别反复问文件系统）
+        int size = 0, mtime = 0;
         try {
-          final text = await lrc.readAsString();
-          if (LrcParser.looksLikeLrc(text)) {
+          final st = await file.stat();
+          size = st.size;
+          mtime = st.modified.millisecondsSinceEpoch;
+        } catch (_) {}
+
+        // 文件没变（大小与修改时间都对得上）→ 库里已有，跳过读标签
+        final prev = known?[path];
+        if (prev != null && prev.size == size && prev.mtime == mtime) {
+          unchanged++;
+          done++;
+          onProgress?.call(done, files.length);
+          continue;
+        }
+
+        final ext = path.contains('.') ? path.split('.').last : '';
+        final fmt = MusicFormatX.fromExtension(ext);
+        if (fmt == null) {
+          done++;
+          onProgress?.call(done, files.length);
+          continue;
+        }
+
+        TagData tag = TagData();
+        try {
+          tag = await _readTags(file);
+        } catch (_) {}
+
+        final id = Track.idOf('local', path);
+
+        // 内嵌封面拿不到时，看同目录有没有 cover.jpg / folder.png 之类
+        Uint8List? art = tag.artwork;
+        if (art == null || art.isEmpty) {
+          art = await _siblingCover(dirCoverCache, path);
+        }
+        String? coverPath;
+        if (art != null && art.isNotEmpty) {
+          coverPath = await _writeCover(covers, art);
+          if (coverPath != null) withCover++;
+        }
+
+        // 同目录文件名单只列一次：既用来找 .lrc，也用来找同目录封面，
+        // 省掉「每首歌探测一次 lrc 是否存在」的系统调用
+        final names = await _namesIn(p.dirname(path));
+        String? lyricPath;
+        final lrcPath = names['${p.basenameWithoutExtension(path)}.lrc'.toLowerCase()];
+        if (lrcPath != null) {
+          try {
+            final text = await File(lrcPath).readAsString();
+            if (LrcParser.looksLikeLrc(text)) {
+              lyricPath = await _write(lyrics, id, utf8.encode(text));
+              if (lyricPath != null) withLyric++;
+            }
+          } catch (_) {}
+        }
+        // 没有 .lrc 就用文件里内嵌的歌词
+        if (lyricPath == null && tag.lyrics != null) {
+          final text = LrcParser.toLrc(tag.lyrics!);
+          if (text.isNotEmpty) {
             lyricPath = await _write(lyrics, id, utf8.encode(text));
             if (lyricPath != null) withLyric++;
           }
-        } catch (_) {}
-      }
-      // 没有 .lrc 就用文件里内嵌的歌词
-      if (lyricPath == null && tag.lyrics != null) {
-        final text = LrcParser.toLrc(tag.lyrics!);
-        if (text.isNotEmpty) {
-          lyricPath = await _write(lyrics, id, utf8.encode(text));
-          if (lyricPath != null) withLyric++;
         }
+
+        // 标签不全时用文件名/目录推断（和网盘导入同一套规则）
+        final g =
+            TrackGuesser.guess(fileName: p.basename(path), path: path, tag: tag);
+
+        out[i] = Track(
+          id: id,
+          title: g.title,
+          artist: g.artist ?? '未知歌手',
+          albumName: g.album ?? '未知专辑',
+          albumId: Album.idOf(g.album ?? '未知专辑'),
+          year: g.year,
+          duration: tag.duration ?? Duration.zero,
+          format: tag.format ?? fmt,
+          quality: tag.qualityText(),
+          hiRes: tag.hiRes,
+          hasTags: tag.hasCoreTags,
+          url: Uri.file(path).toString(),
+          sourceId: 'local',
+          path: path,
+          coverPath: coverPath,
+          lyricPath: lyricPath,
+          sizeBytes: size,
+          addedAt: DateTime.now().millisecondsSinceEpoch,
+          // 本地文件的修改时间当作创建时间
+          createdAt: mtime,
+        );
+
+        done++;
+        onProgress?.call(done, files.length);
+        onTrackScanned?.call(out[i]!);
       }
-
-      // 标签不全时用文件名/目录推断（和网盘导入同一套规则）
-      final g = TrackGuesser.guess(fileName: p.basename(path), path: path, tag: tag);
-      int size = 0;
-      try {
-        size = await file.length();
-      } catch (_) {}
-
-      out.add(Track(
-        id: id,
-        title: g.title,
-        artist: g.artist ?? '未知歌手',
-        albumName: g.album ?? '未知专辑',
-        albumId: Album.idOf(g.album ?? '未知专辑'),
-        year: g.year,
-        duration: tag.duration ?? Duration.zero,
-        format: tag.format ?? fmt,
-        quality: tag.qualityText(),
-        hiRes: tag.hiRes,
-        hasTags: tag.hasCoreTags,
-        url: Uri.file(path).toString(),
-        sourceId: 'local',
-        path: path,
-        coverPath: coverPath,
-        lyricPath: lyricPath,
-        sizeBytes: size,
-        addedAt: DateTime.now().millisecondsSinceEpoch,
-        // 本地文件的修改时间当作创建时间
-        createdAt: await _mtime(file),
-      ));
-      onTrackScanned?.call(out.last);
     }
 
+    if (files.isNotEmpty) {
+      await Future.wait(List.generate(lanes, (_) => lane()));
+    }
+    final tracks = [for (final t in out) if (t != null) t];
+
     return LocalScanResult(
-      tracks: out,
+      tracks: tracks,
+      unchanged: unchanged,
       scanned: files.length,
       withCover: withCover,
       withLyric: withLyric,
@@ -222,13 +272,21 @@ class LocalScanner {
     return roots;
   }
 
-  /// 文件修改时间（毫秒）；读不到就给 0
-  static Future<int> _mtime(File f) async {
+  /// 同目录文件名清单（小写文件名 → 真实路径）。
+  /// 一个目录只列一次，找封面、找 .lrc 都复用它，避免每个文件都去 stat。
+  final Map<String, Map<String, String>> _namesByDir = {};
+
+  Future<Map<String, String>> _namesIn(String dirPath) async {
+    final hit = _namesByDir[dirPath];
+    if (hit != null) return hit;
+    final out = <String, String>{};
     try {
-      return (await f.lastModified()).millisecondsSinceEpoch;
-    } catch (_) {
-      return 0;
-    }
+      await for (final e in Directory(dirPath).list(followLinks: false)) {
+        if (e is! File) continue;
+        out[p.basename(e.path).toLowerCase()] = e.path;
+      }
+    } catch (_) {}
+    return _namesByDir[dirPath] = out;
   }
 
   /// 同目录里的封面文件：cover.jpg / folder.png / front.jpeg …
@@ -239,26 +297,23 @@ class LocalScanner {
 
     Uint8List? found;
     try {
-      final d = Directory(dir);
-      if (await d.exists()) {
-        final names = <String>[];
-        await for (final e in d.list(followLinks: false)) {
-          if (e is! File) continue;
-          final base = p.basenameWithoutExtension(e.path).toLowerCase();
-          final ext = p.extension(e.path).replaceFirst('.', '').toLowerCase();
-          if (!_coverNames.contains(base)) continue;
-          if (!_coverExts.contains(ext)) continue;
-          names.add(e.path);
-        }
-        // cover.jpg 优先于 thumb.png 之类
-        names.sort((a, b) => a.length.compareTo(b.length));
-        for (final path in names) {
-          final f = File(path);
-          final size = await f.length();
-          if (size <= 0 || size > _maxArt) continue;
-          found = await f.readAsBytes();
-          break;
-        }
+      final names = await _namesIn(dir);
+      final candidates = <String>[];
+      for (final e in names.entries) {
+        final base = p.basenameWithoutExtension(e.key);
+        final ext = p.extension(e.key).replaceFirst('.', '');
+        if (!_coverNames.contains(base)) continue;
+        if (!_coverExts.contains(ext)) continue;
+        candidates.add(e.value);
+      }
+      // cover.jpg 优先于 thumb.png 之类
+      candidates.sort((a, b) => a.length.compareTo(b.length));
+      for (final path in candidates) {
+        final f = File(path);
+        final size = await f.length();
+        if (size <= 0 || size > _maxArt) continue;
+        found = await f.readAsBytes();
+        break;
       }
     } catch (_) {}
     cache[dir] = found;
@@ -270,13 +325,26 @@ class LocalScanner {
 
   Future<String?> _writeCover(Directory dir, Uint8List raw) async {
     if (raw.isEmpty || raw.length > _maxArt) return null;
-    // 15MB 的封面原样存下来太夸张，先缩到 1200px
+
+    // 先用**原始字节**哈希查重：整轨专辑每首都内嵌同一张封面，
+    // 先缩图再查重等于把同一张图解码/编码几十遍——这是扫描最慢的一步。
+    final rawHash = _hash32(raw);
+    final cached = _coverByHash[rawHash];
+    if (cached != null) return cached;
+
+    // 15MB 的封面原样存下来太夸张，缩到 1200px 再落盘
     final bytes = await CoverCodec.shrink(raw);
     final h = _hash32(bytes);
     final hit = _coverByHash[h];
-    if (hit != null) return hit;
+    if (hit != null) {
+      _coverByHash[rawHash] = hit;
+      return hit;
+    }
     final path = await _write(dir, 'h$h.${TagReader.imageExt(bytes)}', bytes);
-    if (path != null) _coverByHash[h] = path;
+    if (path != null) {
+      _coverByHash[rawHash] = path;
+      _coverByHash[h] = path;
+    }
     return path;
   }
 
