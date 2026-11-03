@@ -8,22 +8,42 @@ import 'package:flutter/services.dart';
 /// 所以这里只做「能找到就用」，找不到就安静跳过——断言不依赖字形，
 /// 只有本地生成截图时才有意义。
 Future<void> loadTestFonts() async {
-  final cache = _flutterCacheDir();
-
-  // 1) Material 图标：Flutter SDK 自带，路径可以从当前 dart 可执行文件推出来
-  if (cache != null) {
-    for (final name in const [
-      'materialicons-regular.otf',
-      'materialicons-regular.ttf',
-    ]) {
-      final f = File('$cache/artifacts/material_fonts/$name');
-      if (await _load(f, const ['MaterialIcons'])) return _loadCjk(cache);
-    }
-  }
-  await _loadCjk(cache);
+  final icons = _findMaterialIcons();
+  if (icons != null) await _load(icons, const ['MaterialIcons']);
+  await _loadCjk();
 }
 
-Future<void> _loadCjk(String? cache) async {
+/// Material 图标在 Flutter SDK 的 bin/cache/artifacts/material_fonts 下。
+/// `flutter test` 跑的是 flutter_tester，可执行文件在很深的 engine 目录里，
+/// 所以这里从几个起点向上逐级探测，而不是假设一个固定层数。
+File? _findMaterialIcons() {
+  const names = ['materialicons-regular.otf', 'materialicons-regular.ttf'];
+  final roots = <String>[
+    Platform.environment['FLUTTER_ROOT'] ?? '',
+    File(Platform.resolvedExecutable).parent.path,
+    Directory.current.path,
+  ];
+
+  for (final root in roots) {
+    if (root.isEmpty) continue;
+    var dir = Directory(root);
+    for (var i = 0; i < 8; i++) {
+      for (final sub in const ['', 'bin/cache/']) {
+        for (final name in names) {
+          final dir2 = _join(dir.path, '${sub}artifacts/material_fonts');
+          final f = File(_join(dir2, name));
+          if (f.existsSync()) return f;
+        }
+      }
+      final parent = dir.parent;
+      if (parent.path == dir.path) break;
+      dir = parent;
+    }
+  }
+  return null;
+}
+
+Future<void> _loadCjk() async {
   for (final path in _cjkCandidates) {
     final f = File(path);
     if (f.existsSync()) {
@@ -48,16 +68,8 @@ Future<bool> _load(File file, List<String> families) async {
   }
 }
 
-/// Flutter 的 bin/cache 目录：<flutter>/bin/cache/dart-sdk/bin/dart
-String? _flutterCacheDir() {
-  try {
-    final exe = File(Platform.resolvedExecutable);
-    final cache = exe.parent.parent.parent;
-    return cache.path.replaceAll('\\', '/');
-  } catch (_) {
-    return null;
-  }
-}
+String _join(String a, String b) =>
+    '${a.replaceAll('\\', '/')}/${b.replaceAll('\\', '/')}';
 
 const _cjkCandidates = <String>[
   // Windows
