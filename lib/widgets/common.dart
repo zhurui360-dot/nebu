@@ -25,7 +25,7 @@ extension ColorAlpha on Color {
 /// iOS 磨砂配方：高斯模糊 + 饱和度提升（1.6×）。
 /// 只做 blur 会得到"磨砂塑料"，叠上饱和度才是玻璃那种通透的润。
 ImageFilter frostedFilter(double sigma) => ImageFilter.compose(
-      outer: ColorFilter.matrix(const <double>[
+      outer: const ColorFilter.matrix(<double>[
         1.4722, -0.4290, -0.0432, 0, 0, //
         -0.1278, 1.1710, -0.0432, 0, 0, //
         -0.1278, -0.4290, 1.5568, 0, 0, //
@@ -876,13 +876,13 @@ class _AlpsPainter extends CustomPainter {
     canvas.drawRect(
       rect,
       Paint()
-        ..shader = RadialGradient(
-          colors: const [
+        ..shader = const RadialGradient(
+          colors: [
             Color(0xF2FFF7E2),
             Color(0x42FFF7E2),
             Color(0x00FFF7E2)
           ],
-          stops: const [0, .34, 1],
+          stops: [0, .34, 1],
         ).createShader(Rect.fromCircle(center: moonCenter, radius: w * .46)),
     );
 
@@ -997,7 +997,7 @@ class TrackTile extends StatelessWidget {
                         if (!track.hasTags) ...[
                           const SizedBox(width: 5),
                           _Badge(L.read(context).t('badgeNoTag'),
-                              color: Color(0xFFC2412E), filled: true),
+                              color: const Color(0xFFC2412E), filled: true),
                         ],
                       ],
                     ],

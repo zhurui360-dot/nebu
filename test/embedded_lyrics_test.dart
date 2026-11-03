@@ -45,7 +45,7 @@ Uint8List buildId3WithLyrics(String lyrics) {
 
 void main() {
   test('能读出 ID3v2 里内嵌的歌词（USLT）', () {
-    final lrc = '[00:12.50]故事的小黄花\n[00:20.00]从出生那年就飘着';
+    const lrc = '[00:12.50]故事的小黄花\n[00:20.00]从出生那年就飘着';
     final tag = TagReader.parse(buildId3WithLyrics(lrc));
     expect(tag.title, '晴天');
     expect(tag.artist, '周杰伦');
@@ -54,7 +54,7 @@ void main() {
   });
 
   test('纯文本歌词会被整理成可滚动的 LRC', () {
-    final text = '第一行\n第二行\n第三行';
+    const text = '第一行\n第二行\n第三行';
     final lrc = LrcParser.toLrc(text);
     expect(lrc, contains('[00:00.00]第一行'));
     expect(lrc, contains('[00:06.00]第二行'));
@@ -65,7 +65,7 @@ void main() {
   });
 
   test('本身就是 LRC 时不重复加时间轴', () {
-    final lrc = '[01:02.00]晴天';
+    const lrc = '[01:02.00]晴天';
     expect(LrcParser.toLrc(lrc), lrc);
   });
 
@@ -74,7 +74,7 @@ void main() {
   });
 
   test('双语 LRC：同一时间戳的第二行并入翻译', () {
-    final lrc = '[00:10.00]All of the scars\n'
+    const lrc = '[00:10.00]All of the scars\n'
         '[00:10.00]所有我无法抹去的伤痕\n'
         '[00:16.00]Quiet is stronger\n'
         '[00:16.02]沉默的力量\n'
@@ -91,7 +91,7 @@ void main() {
   });
 
   test('不同时间戳不合并（副歌重复不受影响）', () {
-    final lrc = '[00:10.00]副歌\n[00:40.00]副歌';
+    const lrc = '[00:10.00]副歌\n[00:40.00]副歌';
     final lines = LrcParser.parse(lrc);
     expect(lines.length, 2);
     expect(lines[0].trans, isNull);

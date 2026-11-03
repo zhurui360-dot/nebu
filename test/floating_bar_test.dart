@@ -12,13 +12,13 @@ void main() {
   testWidgets('悬浮播放条：滑动时隐藏，停手后回来', (tester) async {
     final app = AppState(LibraryRepository());
     app.tracks = [
-      Track(
+      const Track(
         id: 'tr-1',
         title: '听见光的样子',
         albumId: 'al-1',
         albumName: '夜航',
         artist: '林屿',
-        duration: const Duration(minutes: 3),
+        duration: Duration(minutes: 3),
         format: MusicFormat.flac,
         addedAt: 1700000000,
       ),

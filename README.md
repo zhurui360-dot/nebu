@@ -7,7 +7,7 @@
 **把网盘变成你的私人音乐库。**
 一个用 Flutter 写的网盘音乐播放器，直连 WebDAV，不存服务器、不上传曲库、不插广告。
 
-[![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](../../releases)
+[![Version](https://img.shields.io/badge/version-0.0.001-blue.svg)](../../releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS-lightgrey.svg)](#安装)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B.svg?logo=flutter)](https://flutter.dev)
@@ -72,7 +72,7 @@
 
 ### Android
 
-到 [Releases](../../releases/latest) 下载 `nebu-v0.0.1-release.apk` 直接安装（需要允许「安装未知来源应用」）。
+到 [Releases](../../releases/latest) 下载 `nebu-v0.0.001-release.apk` 直接安装（需要允许「安装未知来源应用」）。
 
 - 最低支持 Android 8.0（API 26）
 - 包名 `com.cloudtune.player`，使用项目自有密钥签名，签名一致的旧版本可直接覆盖升级
@@ -177,9 +177,6 @@ flutter test         # 141 passed
 测试覆盖：曲库索引与去重、歌单增删、删除歌曲的引用清理、多语言回退链、WebDAV 添加全链路（弹层串接）、主题与设置持久化。
 
 ## 常见问题
-
-**Q：为什么不支持夸克 / 联通网盘？**
-它们没有开放文件读写 API，验证码登录拿不到可用的目录权限。想用可以用 [Alist](https://github.com/AlistGo/alist) / OpenList 把它们挂成 WebDAV，再填进 Nebu。
 
 **Q：扫描完没有封面？**
 封面读的是文件内嵌的 APIC / FLAC PICTURE / MP4 covr。纯音频无内嵌图时，需要在「我的 → 歌词源 / 封面源」里保留在线封面源。

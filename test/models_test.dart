@@ -23,7 +23,6 @@ void main() {
     test('正式版只开放 WebDAV，来源清单里没有示例曲目', () {
       expect(SourceCatalog.sources.map((s) => s.id), ['webdav']);
       expect(SourceCatalog.sources.first.kind, SourceKind.webdav);
-      expect(SourceCatalog.upcoming, isNotEmpty);
     });
 
     test('种子曲目 14 首，路径与 id 稳定', () {

@@ -664,7 +664,7 @@ class AppState extends ChangeNotifier {
       }
       if (url.isEmpty) throw Exception('没有可用的下载地址');
 
-      return DownloadService.downloadUrl(
+      return await DownloadService.downloadUrl(
         url: url,
         headers: headers,
         fileName: fileName,

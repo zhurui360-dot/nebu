@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:cloudtune/data/repository.dart';
@@ -145,7 +144,7 @@ void main() {
 
     // ---- 4. 文件名规则面板（自定义模板 + 预览） ----
     await tester.pumpWidget(wrap(Builder(builder: (ctx) {
-      return Align(
+      return const Align(
         alignment: Alignment.bottomCenter,
         child: FilenameRuleSheet(),
       );

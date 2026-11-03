@@ -488,8 +488,6 @@ const Map<String, List<String>> _dict = {
     '',
     ''
   ],
-  'src.upcoming': ['后续版本支持', '後續版本支援', 'Coming later', '今後の対応', '추후 지원', '', ''],
-  'src.soon': ['即将支持', '即將支援', 'Soon', '近日対応', '곧 지원', '', ''],
   'src.privacyTitle': ['数据只留在本机', '資料只留在本機', 'Your data stays on this device', 'データは端末内のみ', '데이터는 기기에만', '', ''],
   'src.privacyBody': [
     '本地音乐只读取媒体库索引与文件标签；WebDAV 密码存在系统钥匙串，播放走你服务器的直链，不经过任何中转。',

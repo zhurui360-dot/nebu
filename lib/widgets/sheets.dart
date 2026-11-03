@@ -14,8 +14,8 @@ import 'anchored_panel.dart';
 import 'common.dart';
 
 /// 统一的底部毛玻璃弹层
-Future<T?> showGlassSheet<T>(BuildContext context, Widget child) {
-  return showModalBottomSheet<T>(
+Future<Res?> showGlassSheet<Res>(BuildContext context, Widget child) {
+  return showModalBottomSheet<Res>(
     context: context,
     isScrollControlled: true,
     barrierColor: const Color(0x59080A0F),
@@ -31,8 +31,8 @@ Future<T?> showGlassSheet<T>(BuildContext context, Widget child) {
 ///
 /// [child] 是弹窗正文（自带标题栏/按钮），外壳只负责居中 + 圆角玻璃 + 遮罩。
 /// 弹窗本身可以随内容自适应高度，超高时内部滚动（约束 84% 屏高）。
-Future<T?> showCenteredGlassDialog<T>(BuildContext context, Widget child) {
-  return showDialog<T>(
+Future<Res?> showCenteredGlassDialog<Res>(BuildContext context, Widget child) {
+  return showDialog<Res>(
     context: context,
     barrierColor: const Color(0x59080A0F),
     builder: (ctx) => Dialog(

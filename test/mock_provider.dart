@@ -42,17 +42,17 @@ class MockProvider implements CloudProvider {
             modified: DateTime.now(),
           ),
         // 三个新文件：两个带标签、一个故意没有标签（用来验证在线补全那一步）
-        CloudEntry(
+        const CloudEntry(
             path: '/音乐/测试歌手/冻结.flac',
             name: '冻结.flac',
             isDir: false,
             size: 30 * 1024 * 1024),
-        CloudEntry(
+        const CloudEntry(
             path: '/音乐/测试歌手/当你.flac',
             name: '当你.flac',
             isDir: false,
             size: 28 * 1024 * 1024),
-        CloudEntry(
+        const CloudEntry(
             path: '/音乐/测试歌手/未知曲目 03.mp3',
             name: '未知曲目 03.mp3',
             isDir: false,

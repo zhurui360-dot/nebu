@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:cloudtune/data/repository.dart';
@@ -61,23 +60,23 @@ void main() {
 
     final app = AppState(LibraryRepository());
     app.tracks = [
-      Track(
+      const Track(
         id: 'tr-1',
         title: '听见光的样子',
         albumId: 'al-1',
         albumName: '夜航',
         artist: '林屿',
-        duration: const Duration(minutes: 3, seconds: 42),
+        duration: Duration(minutes: 3, seconds: 42),
         format: MusicFormat.flac,
         addedAt: 1700000000,
       ),
-      Track(
+      const Track(
         id: 'tr-2',
         title: '雪落下的声音',
         albumId: 'al-2',
         albumName: '冬',
         artist: '陈一禾',
-        duration: const Duration(minutes: 4),
+        duration: Duration(minutes: 4),
         format: MusicFormat.flac,
         addedAt: 1700000001,
       ),
@@ -149,9 +148,9 @@ void main() {
 
     // 5. 音乐保存目录（居中弹窗，列出三个真实路径）
     await app.setLang(AppLang.zhHans);
-    await tester.pumpWidget(wrap(Align(
+    await tester.pumpWidget(wrap(const Align(
       alignment: Alignment.center,
-      child: const DownloadDirSheet(key: ValueKey('dir')),
+      child: DownloadDirSheet(key: ValueKey('dir')),
     )));
     await _settle(tester);
     await _shot(tester, '05-音乐保存目录');

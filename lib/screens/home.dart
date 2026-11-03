@@ -310,7 +310,7 @@ class _EmptyHome extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       child: Text(l.t('home.connectCloud'),
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ],

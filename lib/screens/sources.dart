@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../data/source_catalog.dart';
 import '../l10n/strings.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
@@ -143,43 +142,6 @@ class SourcesScreen extends StatelessWidget {
                     for (final s in orphans)
                       _orphanRow(context, p, s),
                   ],
-
-                  // ---------- 后续版本 ----------
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-                    child: Text(l.t('src.upcoming'),
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.1,
-                            color: p.t3)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final name in SourceCatalog.upcoming)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: p.line),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(name, style: TextStyle(fontSize: 12.5, color: p.t3)),
-                                const SizedBox(width: 5),
-                                Text(l.t('src.soon'),
-                                    style: TextStyle(fontSize: 11, color: p.t3.op(.7))),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
 
                   Container(
                     margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),

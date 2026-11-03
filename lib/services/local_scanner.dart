@@ -99,7 +99,7 @@ class LocalScanner {
     onStatus?.call('找到 ${files.length} 个音频文件');
 
     // 同目录封面只找一次；封面字节也按内容去重，一张专辑不会存 N 份
-    final _dirCoverCache = <String, Uint8List?>{};
+    final dirCoverCache = <String, Uint8List?>{};
 
     final out = <Track>[];
     var withCover = 0, withLyric = 0;
@@ -123,7 +123,7 @@ class LocalScanner {
       // 内嵌封面拿不到时，看同目录有没有 cover.jpg / folder.png 之类
       Uint8List? art = tag.artwork;
       if (art == null || art.isEmpty) {
-        art = await _siblingCover(_dirCoverCache, path);
+        art = await _siblingCover(dirCoverCache, path);
       }
       String? coverPath;
       if (art != null && art.isNotEmpty) {

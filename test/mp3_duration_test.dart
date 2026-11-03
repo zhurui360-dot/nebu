@@ -93,7 +93,7 @@ void main() {
   test('VBRI 头也能算（Fraunhofer 编码器）', () {
     final d = Uint8List(400);
     d.setRange(0, 4, _frameHeader);
-    final v = 4 + 32; // VBRI 固定在帧头后 32 字节
+    const v = 4 + 32; // VBRI 固定在帧头后 32 字节
     d.setRange(v, v + 4, const [0x56, 0x42, 0x52, 0x49]); // 'VBRI'
     d[v + 14] = 0;
     d[v + 15] = 0;

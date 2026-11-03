@@ -752,7 +752,7 @@ class _BottomPanel extends StatelessWidget {
                           children: [
                             Text(
                               L.of(context).t('player.preview'),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontSize: 12.5, fontWeight: FontWeight.w700, color: Colors.white),
                             ),
                             const SizedBox(height: 2),
@@ -1140,9 +1140,9 @@ class _ProgressBarState extends State<_ProgressBar>
                                       child: FractionallySizedBox(
                                         alignment: Alignment(-1 + 2 * t, 0),
                                         widthFactor: .38,
-                                        child: DecoratedBox(
+                                        child: const DecoratedBox(
                                           decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
+                                            gradient: LinearGradient(
                                               colors: [
                                                 Colors.transparent,
                                                 Color(0x8CFFFFFF),

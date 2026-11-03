@@ -16,7 +16,7 @@ Uint8List buildId3({
   required int coverSize,
 }) {
   List<int> textFrame(String id, String value) {
-    final payload = <int>[0x03]..addAll(utf8.encode(value)); // 0x03 = UTF-8
+    final payload = <int>[0x03, ...utf8.encode(value)]; // 0x03 = UTF-8
     final size = payload.length;
     return [
       ...utf8.encode(id),

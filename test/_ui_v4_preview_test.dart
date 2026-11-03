@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:cloudtune/data/repository.dart';
@@ -121,16 +120,16 @@ void main() {
     await _settle(tester);
 
     // 3. 语言选择（居中弹窗）+ 保存目录（居中弹窗）
-    await tester.pumpWidget(wrap(Align(
+    await tester.pumpWidget(wrap(const Align(
       alignment: Alignment.center,
-      child: const LanguageSheet(key: ValueKey('lang')),
+      child: LanguageSheet(key: ValueKey('lang')),
     )));
     await _settle(tester);
     await _shot(tester, '03-语言选择');
 
-    await tester.pumpWidget(wrap(Align(
+    await tester.pumpWidget(wrap(const Align(
       alignment: Alignment.center,
-      child: const DownloadDirSheet(key: ValueKey('dir')),
+      child: DownloadDirSheet(key: ValueKey('dir')),
     )));
     await _settle(tester);
     await _shot(tester, '04-音乐保存目录');

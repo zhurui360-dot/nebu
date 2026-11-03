@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:cloudtune/data/repository.dart';
@@ -136,7 +135,7 @@ void main() {
     await _settle(tester);
 
     // 4. 文件名规则：自定义模板 + 间隔符号
-    await tester.pumpWidget(wrap(Align(
+    await tester.pumpWidget(wrap(const Align(
       alignment: Alignment.bottomCenter,
       child: FilenameRuleSheet(key: ValueKey('rule')),
     )));

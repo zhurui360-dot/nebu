@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:cloudtune/data/repository.dart';
@@ -184,7 +183,7 @@ void main() {
                                 child: const SizedBox.expand(),
                               ),
                             ),
-                            Positioned(
+                            const Positioned(
                               left: 4,
                               width: 92,
                               top: 5,
@@ -194,8 +193,8 @@ void main() {
                                 blur: Blur.thin,
                                 sheer: true,
                                 elevated: false,
-                                fill: const Color(0x16FFFFFF),
-                                child: const SizedBox.expand(),
+                                fill: Color(0x16FFFFFF),
+                                child: SizedBox.expand(),
                               ),
                             ),
                             const Positioned.fill(
@@ -273,7 +272,7 @@ void main() {
               if (child != null) child,
             ],
           ),
-          home: Scaffold(
+          home: const Scaffold(
             backgroundColor: Colors.transparent,
             body: Center(
               child: Column(
@@ -284,11 +283,11 @@ void main() {
                     child: Glass(
                       radius: 26,
                       blur: Blur.regular,
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           Text('Liquid Glass',
                               style: TextStyle(
                                   fontSize: 20,
@@ -302,18 +301,18 @@ void main() {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 26),
+                  SizedBox(height: 26),
                   SizedBox(
                     width: 300,
                     child: Glass(
                       radius: 26,
                       blur: Blur.regular,
                       sheer: true,
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           Text('Clear Glass',
                               style: TextStyle(
                                   fontSize: 17,
@@ -361,7 +360,7 @@ void main() {
             body: Stack(
               children: [
                 _busyContent(dark: true),
-                Center(
+                const Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -370,11 +369,11 @@ void main() {
                         child: Glass(
                           radius: 26,
                           blur: Blur.regular,
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
+                            children: [
                               Text('Liquid Glass',
                                   style: TextStyle(
                                       fontSize: 20,
@@ -388,18 +387,18 @@ void main() {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 26),
+                      SizedBox(height: 26),
                       SizedBox(
                         width: 300,
                         child: Glass(
                           radius: 26,
                           blur: Blur.regular,
                           sheer: true,
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
+                            children: [
                               Text('Clear Glass（全透明档）',
                                   style: TextStyle(
                                       fontSize: 17,

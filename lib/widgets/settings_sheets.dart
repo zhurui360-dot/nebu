@@ -6,7 +6,6 @@ import '../l10n/strings.dart';
 import '../services/download_service.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
-import 'common.dart';
 import 'sheets.dart' show glassSheetHeader;
 
 /// 语言选择：跟随系统 + 7 种语言，就地切换、立即生效。

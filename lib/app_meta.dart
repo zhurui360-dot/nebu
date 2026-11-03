@@ -1,7 +1,7 @@
 /// 版本信息：与 pubspec.yaml 的 version 保持一致
 /// （改版本时两处一起改，更新检查用它和服务器比对）
 class AppMeta {
-  static const version = '0.0.1';
+  static const version = '0.0.001';
 
   /// versionCode 自动从版本号推导（0.0.XX → XX），
   /// 与 version.json 里的 versionCode 同一规则，避免手改漏同步导致误报更新。

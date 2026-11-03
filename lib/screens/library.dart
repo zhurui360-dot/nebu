@@ -53,7 +53,7 @@ class LibraryScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
                       ),
                       child: Text(l.t('lib.goImport'),
-                          style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700)),
+                          style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ],

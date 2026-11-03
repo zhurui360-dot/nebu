@@ -161,7 +161,7 @@ void main() {
 
   group('DSF 内嵌', () {
     test('dsfId3Offset 读出文件头里的指针', () {
-      final off = 1024 * 512;
+      const off = 1024 * 512;
       final head = buildDsfHead(off);
       expect(TagReader.dsfId3Offset(head), off);
       expect(TagReader.dsfId3Offset(Uint8List(10)), isNull);
