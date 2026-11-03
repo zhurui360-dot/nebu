@@ -154,6 +154,31 @@ class AppState extends ChangeNotifier {
   bool localScanning = false;
   double localProgress = 0;
 
+  /// 是否正在扫描 / 导入（本地扫描与网盘导入共用一套判断，避免按钮被重复点）
+  bool get isScanning {
+    final j = importJob;
+    return localScanning || (j != null && !j.isDone);
+  }
+
+  /// 统一的扫描进度（**0–100**，已经夹在范围内，界面直接用，不要再乘 100）
+  double get scanProgress {
+    if (localScanning) return (localProgress.clamp(0.0, 1.0)) * 100;
+    final j = importJob;
+    if (j == null) return 0;
+    return j.progress.clamp(0.0, 100.0);
+  }
+
+  int _lastProgressNotify = 0;
+
+  /// 扫描时每读一个文件就回调一次，全量 notifyListeners 会把整棵树重建到卡死。
+  /// 限到约 10 次/秒：进度肉眼看不出差别，掉帧明显好转。
+  void _notifyProgress({bool force = false}) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (!force && now - _lastProgressNotify < 90) return;
+    _lastProgressNotify = now;
+    notifyListeners();
+  }
+
   /// 在线元数据源（内置 + 用户自定义）
   List<MetaSource> metaSources = OnlineMeta.builtIn;
   bool fillingMeta = false;
@@ -1246,10 +1271,16 @@ class AppState extends ChangeNotifier {
         : '重新读取完成：$updated 首更新';
   }
 
-  Future<String> scanLocal({List<String>? paths}) async {
+  Future<String> scanLocal({
+    List<String>? paths,
+
+    /// 多目录批量扫描时，这一段占整条进度的哪一截（0–1）
+    double base = 0,
+    double span = 1,
+  }) async {
     if (localScanning) return '正在扫描中，请稍候';
     localScanning = true;
-    localProgress = 0;
+    localProgress = base;
     notifyListeners();
 
     try {
@@ -1270,11 +1301,12 @@ class AppState extends ChangeNotifier {
       }
 
       final res = await scanner.scan(roots: paths, onProgress: (done, total) {
-        localProgress = total == 0 ? 0 : done / total;
-        notifyListeners();
+        final ratio = total == 0 ? 0.0 : done / total;
+        localProgress = (base + ratio.clamp(0.0, 1.0) * span).clamp(0.0, 1.0);
+        _notifyProgress();
       }, onTrackScanned: (t) async {
         pending.add(t);
-        if (pending.length >= 8) await flush();
+        if (pending.length >= 24) await flush();
       });
       await flush();
 
@@ -1509,6 +1541,10 @@ class AppState extends ChangeNotifier {
     String sourceId,
     List<String> folderPaths, {
     bool includeSubDirs = false,
+
+    /// 多目录批量扫描时，这一段占整条进度的哪一截（0–1）
+    double base = 0,
+    double span = 1,
   }) async {
     for (final path in folderPaths) {
       await _db.upsertFolder(
@@ -1523,19 +1559,31 @@ class AppState extends ChangeNotifier {
 
     // 后台执行，不阻塞界面
     // ignore: unawaited_futures
-    _runImport(sourceId, folderPaths, includeSubDirs: includeSubDirs);
+    _importFuture = _runImport(sourceId, folderPaths,
+        includeSubDirs: includeSubDirs, base: base, span: span);
   }
 
+  Future<void>? _importFuture;
+
+  /// 等当前这轮导入跑完（批量扫描时一段一段推进，进度才连得上）
+  Future<void> get importDone => _importFuture ?? Future<void>.value();
+
   /// 重新扫描某个已保存的目录（新增的歌会被加进来）
-  Future<void> rescanFolder(SavedFolder folder) async {
+  Future<void> rescanFolder(
+    SavedFolder folder, {
+    double base = 0,
+    double span = 1,
+  }) async {
     if (folder.sourceId == 'local') {
-      await scanLocal(paths: [folder.path]);
+      await scanLocal(paths: [folder.path], base: base, span: span);
       return;
     }
     await startImport(
       folder.sourceId,
       [folder.path],
       includeSubDirs: folder.includeSub,
+      base: base,
+      span: span,
     );
   }
 
@@ -1579,8 +1627,13 @@ class AppState extends ChangeNotifier {
     String sourceId,
     List<String> folderPaths, {
     bool includeSubDirs = false,
+    double base = 0,
+    double span = 1,
   }) async {
     final job = ImportJob();
+    // 这一段的起点与跨度，换算成整条进度的 0–100
+    double at(double ratio) =>
+        ((base + ratio.clamp(0.0, 1.0) * span).clamp(0.0, 1.0)) * 100;
     importJob = job;
     notifyListeners();
 
@@ -1610,8 +1663,8 @@ class AppState extends ChangeNotifier {
         onProgress: (done, total) {
           job.total = total;
           job.done = done;
-          job.progress = total == 0 ? 0 : done / total * 100;
-          notifyListeners();
+          job.progress = at(total == 0 ? 0 : done / total);
+          _notifyProgress();
         },
         onFolderProgress: (folder, done, total) {
           job.folderProgress[folder] = [done, total];
@@ -1624,7 +1677,7 @@ class AppState extends ChangeNotifier {
           }
           pending.add(t);
           // 每攒够 8 首落一次库 → 扫描还在继续，曲库已经在涨
-          if (pending.length >= 8) await flush();
+          if (pending.length >= 24) await flush();
         },
       );
       // 收尾：把没凑满一批的落库
@@ -1635,23 +1688,23 @@ class AppState extends ChangeNotifier {
 
       // ② 幂等兜底：整体再写一遍（增量写库已覆盖绝大部分）
       job.step = 1;
-      job.progress = 0;
+      job.progress = at(0);
       notifyListeners();
       await _db.upsertTracks(result.tracks);
       job.added = result.added;
-      job.progress = 100;
+      job.progress = at(1);
       notifyListeners();
 
       // ③ 在线补全（缺标签的才请求）
       job.step = 2;
-      job.progress = 0;
+      job.progress = at(0);
       notifyListeners();
       final untagged = result.tracks.where((t) => !t.hasTags).map((t) => t.id).toList();
       if (onlineMetaEnabled && untagged.isNotEmpty) {
         // 真实版：请求歌词/封面源，匹配「歌名+歌手+时长」，命中后回写本地库
         await _db.updateHasTags(untagged, value: true);
       }
-      job.progress = 100;
+      job.progress = at(1);
 
       // ④ 收尾
       for (final path in folderPaths) {

@@ -1,7 +1,7 @@
 name: cloudtune
 description: "Nebu（云听）— 直连 WebDAV 的网盘音乐播放器，Flutter 跨端，无服务器、无广告。"
 publish_to: "none"
-version: 0.0.001+1
+version: 0.0.002+2
 
 environment:
   sdk: ">=3.3.0 <4.0.0"

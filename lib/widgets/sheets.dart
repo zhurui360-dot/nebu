@@ -1448,10 +1448,7 @@ class MyMusicSheet extends StatelessWidget {
   final VoidCallback onOpenSettings;
 
   /// 正在扫描（有导入任务在跑）
-  bool _scanning(AppState app) {
-    final j = app.importJob;
-    return j != null && !j.isDone;
-  }
+  bool _scanning(AppState app) => app.isScanning;
 
   /// 一键扫描全部已添加目录：本地目录走本地扫描，网盘目录走增量导入。
   /// 只补新歌，已有的曲目不会重复入库。
@@ -1474,9 +1471,15 @@ class MyMusicSheet extends StatelessWidget {
       content: Text(l.t('mymusic.scanStart', {'n': '${folders.length}'})),
       duration: const Duration(seconds: 2),
     ));
-    for (final f in folders) {
+    for (var i = 0; i < folders.length; i++) {
       try {
-        await app.rescanFolder(f);
+        // 每个目录占整条进度的一截，扫完一个再扫下一个，进度不会来回跳
+        await app.rescanFolder(
+          folders[i],
+          base: i / folders.length,
+          span: 1 / folders.length,
+        );
+        await app.importDone;
       } catch (_) {}
     }
     // 本地扫描是同步返回的；网盘导入在后台跑，这里只报告本地结果
@@ -1607,8 +1610,7 @@ class MyMusicSheet extends StatelessWidget {
                     child: Text(
                       scanning
                           ? l.t('mymusic.scanning', {
-                              'p':
-                                  '${((app.importJob?.progress ?? 0) * 100).round()}'
+                              'p': '${app.scanProgress.round()}'
                             })
                           : l.t('mymusic.scan'),
                       style: TextStyle(

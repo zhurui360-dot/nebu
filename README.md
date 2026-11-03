@@ -7,7 +7,7 @@
 **把网盘变成你的私人音乐库。**
 一个用 Flutter 写的网盘音乐播放器，直连 WebDAV，不存服务器、不上传曲库、不插广告。
 
-[![Version](https://img.shields.io/badge/version-0.0.001-blue.svg)](../../releases)
+[![Version](https://img.shields.io/badge/version-0.0.002-blue.svg)](../../releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS-lightgrey.svg)](#安装)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B.svg?logo=flutter)](https://flutter.dev)
@@ -72,10 +72,16 @@
 
 ### Android
 
-到 [Releases](../../releases/latest) 下载 `nebu-v0.0.001-release.apk` 直接安装（需要允许「安装未知来源应用」）。
+到 [Releases](../../releases/latest) 下载对应架构的安装包（需要允许「安装未知来源应用」）：
+
+| 包 | 适用设备 | 体积 |
+|---|---|---|
+| `nebu-v0.0.002-arm64-v8a.apk` | 绝大多数手机（2016 年后的机型推荐） | 约 25 MB |
+| `nebu-v0.0.002-armeabi-v7a.apk` | 老款 32 位设备 | 约 24 MB |
 
 - 最低支持 Android 8.0（API 26）
 - 包名 `com.cloudtune.player`，使用项目自有密钥签名，签名一致的旧版本可直接覆盖升级
+- 安装包按 CPU 架构拆分过，比「三合一」通用包小一半以上
 
 ### iOS
 
@@ -129,20 +135,31 @@ flutter build ipa --release   # 需要 Xcode 与开发者证书
 
 App 启动时静默拉一次更新清单，和本地版本号比对（只比 `versionCode`），有新版本就在「我的」页标红点。
 
-清单地址在 `lib/app_meta.dart` 的 `defaultUpdateUrl`，格式：
+清单地址在 `lib/app_meta.dart` 的 `defaultUpdateUrl`：
+
+```
+https://cdn.jsdelivr.net/gh/zhurui360-dot/nebu@main/version.json
+```
+
+用 jsDelivr 镜像而不是直接读 GitHub，是因为国内移动网络访问 github.com 经常超时；APK 本身仍从 GitHub Releases 下载（CDN 不适合放几十 MB 的包）。
+
+> ⚠️ jsDelivr 对 `@main` 分支有缓存（默认可达 12 小时），所以发版推完 `version.json` 后要清一次缓存：
+> `curl https://purge.jsdelivr.net/gh/zhurui360-dot/nebu@main/version.json`
+
+清单格式：
 
 ```json
 {
-  "version": "0.0.2",
+  "version": "0.0.002",
   "versionCode": 2,
-  "url": "https://github.com/zhurui360-dot/nebu/releases/download/v0.0.2/nebu-v0.0.2-release.apk",
-  "size": 64725183,
+  "url": "https://github.com/zhurui360-dot/nebu/releases/download/v0.0.002/nebu-v0.0.002-arm64-v8a.apk",
+  "size": 26000000,
   "force": false,
   "notes": ["这一版改了什么", "第二条"]
 }
 ```
 
-`versionCode` 由版本号第三段自动推导（`0.0.2` → `2`），不手填，避免漏改导致误报。想换成自己的发布源，把 `defaultUpdateUrl` 指向任意返回同结构 JSON 的地址即可。
+`versionCode` 由版本号第三段自动推导（`0.0.002` → `2`），不手填，避免漏改导致误报。想换成自己的发布源，把 `defaultUpdateUrl` 指向任意返回同结构 JSON 的地址即可。
 
 ## 项目结构
 
