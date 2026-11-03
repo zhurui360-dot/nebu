@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "versionCode": 1,
+  "url": "https://github.com/zhurui360-dot/nebu/releases/download/v0.0.1/nebu-v0.0.1-release.apk",
+  "size": 64725395,
+  "force": false,
+  "notes": [
+    "Nebu 首个开源版本（MIT）",
+    "WebDAV 网盘直连，支持多个账号；本地目录导入与标签、封面解析",
+    "曲库 / 歌单 / 收藏 / 最近播放 / 实时搜索，边听边缓存",
+    "7 种语言：简体中文、繁體中文、English、日本語、한국어、藏文、维吾尔语",
+    "主题支持浅色 / 深色 / 跟随系统；音乐可下载到本地并指定保存目录",
+    "内置在线歌词源（LRCLIB）与封面源（iTunes），也可自己添加"
+  ]
+}

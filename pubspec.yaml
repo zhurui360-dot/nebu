@@ -1,0 +1,49 @@
+name: cloudtune
+description: "Nebu（云听）— 直连 WebDAV 的网盘音乐播放器，Flutter 跨端，无服务器、无广告。"
+publish_to: "none"
+version: 0.0.1+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  # 状态管理：轻量、无代码生成，适合 V1
+  provider: ^6.1.2
+  # 本地缓存：主题、版本号
+  shared_preferences: ^2.2.3
+  # 曲库：sqflite
+  sqflite: ^2.3.3
+  path: ^1.9.0
+  # 本地文件：封面缓存、歌词缓存
+  path_provider: ^2.1.4
+  # 应用内下载 APK 后拉起系统安装器
+  open_filex: ^4.5.0
+  # 权限（本地音乐需要读音频）
+  permission_handler: ^11.3.1
+  # 打开发布页 / 下载链接
+  url_launcher: ^6.3.0
+  # 凭证加密存储（Android Keystore / iOS Keychain）
+  flutter_secure_storage: ^9.2.2
+  # WebDAV：PROPFIND + Range
+  http: ^1.2.1
+  xml: ^6.5.0
+  # 系统播放控件：通知栏 / 锁屏 / 耳机按键
+  audio_service: ^0.18.18
+  # 播放内核：真实音频（拿到网盘直链后即可出声）
+  just_audio: ^0.9.40
+  audio_session: ^0.1.19
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    # 品牌标记（Nebu）：没有内嵌封面的歌曲，播放页用这张图顶替封面
+    - assets/branding/logo_nebu.jpg
+  # 其余封面仍走代码绘制（渐变 / 山景）+ 缓存文件
