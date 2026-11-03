@@ -11,31 +11,16 @@ import 'package:cloudtune/theme/app_theme.dart';
 import 'package:cloudtune/widgets/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'test_fonts.dart';
 
 const _out =
     'C:/Users/36018/WorkBuddy/2026-10-25-14-17-04/cloudtune-player-preview';
 
 const _logo = 'C:/Users/36018/WorkBuddy/2026-10-24-15-55-22/cloudtune_app/assets/branding/logo_nebu.jpg';
 
-Future<void> _loadFont() async {
-  final bytes = await File('C:/Windows/Fonts/simhei.ttf').readAsBytes();
-  final simhei = Future.value(ByteData.view(Uint8List.fromList(bytes).buffer));
-
-  // 主题里 fontFamily 是 null（真机走系统字体），测试环境没有中文字形，
-  // 所以把 SimHei 注册成默认族名 Roboto，让所有文字都能正常显示
-  await (FontLoader('Roboto')..addFont(simhei)).load();
-  await (FontLoader('SimHei')..addFont(simhei)).load();
-
-  final icons = await File(
-          'C:/flutter/bin/cache/artifacts/material_fonts/materialicons-regular.otf')
-      .readAsBytes();
-  await (FontLoader('MaterialIcons')
-        ..addFont(Future.value(ByteData.view(Uint8List.fromList(icons).buffer))))
-      .load();
-}
+Future<void> _loadFont() => loadTestFonts();
 
 Future<void> _shot(WidgetTester tester, String name) async {
   await tester.pump(const Duration(milliseconds: 260));

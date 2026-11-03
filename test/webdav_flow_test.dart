@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:cloudtune/data/repository.dart';
 import 'package:cloudtune/models/models.dart';
@@ -8,9 +7,10 @@ import 'package:cloudtune/state/player_state.dart';
 import 'package:cloudtune/theme/app_theme.dart';
 import 'package:cloudtune/widgets/common.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+
+import 'test_fonts.dart';
 
 /// 回归：v0.0.64 重写「添加音乐来源」后，WebDAV 连接成功却不再往下走——
 /// 选择弹层先 pop，再拿已失效的 context 去 showGlassSheet(ImportSheet)，
@@ -19,18 +19,7 @@ import 'package:provider/provider.dart';
 /// 正确姿势：pop 前先取 Navigator.of(context)，之后用 nav.context 串弹层；
 /// 新账号检测只认「真连上的账号」，不能被内置占位源干扰。
 void main() {
-  setUpAll(() async {
-    final bytes = await File('C:/Windows/Fonts/simhei.ttf').readAsBytes();
-    final simhei = Future.value(ByteData.view(Uint8List.fromList(bytes).buffer));
-    await (FontLoader('Roboto')..addFont(simhei)).load();
-    await (FontLoader('SimHei')..addFont(simhei)).load();
-    final icons = await File(
-            'C:/flutter/bin/cache/artifacts/material_fonts/materialicons-regular.otf')
-        .readAsBytes();
-    await (FontLoader('MaterialIcons')
-          ..addFont(Future.value(ByteData.view(Uint8List.fromList(icons).buffer))))
-        .load();
-  });
+  setUpAll(loadTestFonts);
 
   testWidgets('来源选择 → WebDAV → 连接成功 → 自动打开目录选择', (tester) async {
     final app = AppState(LibraryRepository());

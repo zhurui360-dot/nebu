@@ -9,9 +9,9 @@ import 'package:cloudtune/theme/app_theme.dart';
 import 'package:cloudtune/widgets/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'test_fonts.dart';
 
 const _out = 'C:/Users/36018/WorkBuddy/2026-10-25-14-17-04/cloudtune-liquid-preview';
 
@@ -20,20 +20,7 @@ ThemeData _theme(Brightness b) {
   return t.copyWith(textTheme: t.textTheme.apply(fontFamily: 'SimHei'));
 }
 
-Future<void> _loadFont() async {
-  final bytes = await File('C:/Windows/Fonts/simhei.ttf').readAsBytes();
-  final loader = FontLoader('SimHei')
-    ..addFont(Future.value(ByteData.view(Uint8List.fromList(bytes).buffer)));
-  await loader.load();
-
-  // 图标字体：不加载的话预览里所有 Icon 都是方块
-  final icons = await File(
-          'C:/flutter/bin/cache/artifacts/material_fonts/materialicons-regular.otf')
-      .readAsBytes();
-  final iconLoader = FontLoader('MaterialIcons')
-    ..addFont(Future.value(ByteData.view(Uint8List.fromList(icons).buffer)));
-  await iconLoader.load();
-}
+Future<void> _loadFont() => loadTestFonts();
 
 Future<void> _shot(WidgetTester tester, Key key, String name) async {
   await tester.pump(const Duration(milliseconds: 260));

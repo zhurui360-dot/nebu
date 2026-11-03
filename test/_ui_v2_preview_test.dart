@@ -12,25 +12,13 @@ import 'package:cloudtune/widgets/common.dart';
 import 'package:cloudtune/widgets/sheets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'test_fonts.dart';
 
 const _out = 'C:/Users/36018/WorkBuddy/2026-10-25-14-17-04/cloudtune-v2-preview';
 
-Future<void> _loadFont() async {
-  final bytes = await File('C:/Windows/Fonts/simhei.ttf').readAsBytes();
-  final simhei = Future.value(ByteData.view(Uint8List.fromList(bytes).buffer));
-  await (FontLoader('Roboto')..addFont(simhei)).load();
-  await (FontLoader('SimHei')..addFont(simhei)).load();
-
-  final icons = await File(
-          'C:/flutter/bin/cache/artifacts/material_fonts/materialicons-regular.otf')
-      .readAsBytes();
-  await (FontLoader('MaterialIcons')
-        ..addFont(Future.value(ByteData.view(Uint8List.fromList(icons).buffer))))
-      .load();
-}
+Future<void> _loadFont() => loadTestFonts();
 
 /// 页面上有循环动画（进度条流光、扫描闪烁）时 pumpAndSettle 不会停，用固定帧
 Future<void> _settle(WidgetTester tester) async {
