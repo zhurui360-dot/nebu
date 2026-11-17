@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      启动窗口与 App 背景同色（深靛），避免冷启动白闪。
+      windowBackground 用纯色而不是图片，系统可以直接上屏，比 Flutter 版快。
+    -->
+    <style name="Theme.Nebu" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/nebu_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

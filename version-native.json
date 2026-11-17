@@ -1,0 +1,14 @@
+{
+  "version": "0.0.005",
+  "versionCode": 5,
+  "url": "https://github.com/zhurui360-dot/nebu/releases/download/v0.0.005/nebu-native-0.0.005.apk",
+  "size": 2276078,
+  "force": false,
+  "notes": [
+    "修复：本地音乐无法播放（本地 content:// 音源没走系统数据源，点歌没反应的根因）",
+    "新增：主题切换——「我的 → 外观」可选深色玻璃 / 浅色玻璃 / 跟随系统，设置会记住",
+    "新增：播放失败会给出明确原因提示，不再点了没反应",
+    "补齐 Android 13+ 通知权限请求，锁屏/通知栏媒体控制正常显示",
+    "版本 0.0.005，安装包 2.2MB"
+  ]
+}

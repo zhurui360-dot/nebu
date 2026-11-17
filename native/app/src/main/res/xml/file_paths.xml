@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 升级 APK 落在 cache/updates/，必须显式授出这个目录 -->
+    <cache-path
+        name="updates"
+        path="updates/" />
+</paths>
